@@ -6,6 +6,7 @@
 #include "phonebook_opt.h"
 #include "debug.h"
 
+
 entry *findName(char lastname[], entry *pHead)
 {
     size_t len = strlen(lastname);
@@ -18,25 +19,9 @@ entry *findName(char lastname[], entry *pHead)
                 pHead->dtl = (pdetail) malloc(sizeof(detail));
             return pHead;
         }
-        DEBUG_LOG("find string = %s\n", pHead->lastName);
         pHead = pHead->pNext;
     }
     return NULL;
-}
-
-thread_arg *createThread_arg(char *data_begin, char *data_end,
-                             int threadID, int numOfThread,
-                             entry *entryPool)
-{
-    thread_arg *new_arg = (thread_arg *) malloc(sizeof(thread_arg));
-
-    new_arg->data_begin = data_begin;
-    new_arg->data_end = data_end;
-    new_arg->threadID = threadID;
-    new_arg->numOfThread = numOfThread;
-    new_arg->lEntryPool_begin = entryPool;
-    new_arg->lEntry_head = new_arg->lEntry_tail = entryPool;
-    return new_arg;
 }
 
 /**
@@ -44,32 +29,27 @@ thread_arg *createThread_arg(char *data_begin, char *data_end,
  */
 void append(void *arg)
 {
-    struct timespec start, end;
-    double cpu_time;
-
-    clock_gettime(CLOCK_REALTIME, &start);
-
     thread_arg *t_arg = (thread_arg *) arg;
-
+    char *data = t_arg->data_start;
+    int w = 0;
     int count = 0;
-    entry *j = t_arg->lEntryPool_begin;
-    for (char *i = t_arg->data_begin; i < t_arg->data_end;
-            i += MAX_LAST_NAME_SIZE * t_arg->numOfThread,
-            j += t_arg->numOfThread, count++) {
-        /* Append the new at the end of the local linked list */
-        t_arg->lEntry_tail->pNext = j;
-        t_arg->lEntry_tail = t_arg->lEntry_tail->pNext;
-        t_arg->lEntry_tail->lastName = i;
-        t_arg->lEntry_tail->pNext = NULL;
-        t_arg->lEntry_tail->dtl = NULL;
-        DEBUG_LOG("thread %d t_argend string = %s\n",
-                  t_arg->threadID, t_arg->lEntry_tail->lastName);
+    entry *e = NULL;
+    while (data < t_arg->data_end) {
+        if (*(data+w) == '\n') {
+            count++;
+            e = (entry *)malloc(sizeof(entry));
+            e->lastName = data;
+            *(data+w) = '\0';
+            data+=(w+1);
+            w = 0;
+            if (!t_arg->entry_list_tail)
+                t_arg->entry_list_tail = e;
+            e->pNext = t_arg->entry_list_head;
+            t_arg->entry_list_head = e;
+        }
+        w++;
     }
-    clock_gettime(CLOCK_REALTIME, &end);
-    cpu_time = diff_in_second(start, end);
-
-    DEBUG_LOG("thread take %lf sec, count %d\n", cpu_time, count);
-
+    t_arg->count = count;
     pthread_exit(NULL);
 }
 
