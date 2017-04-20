@@ -33,19 +33,19 @@ void append(void *arg)
     char *data = t_arg->data_start;
     int w = 0;
     int count = 0;
-    entry *e = NULL;
+    entry **ne = &(t_arg->entry_list_head);
     while (data < t_arg->data_end) {
         if (*(data+w) == '\n') {
             count++;
-            e = (entry *)malloc(sizeof(entry));
-            e->lastName = data;
+            *ne = (entry *)malloc(sizeof(entry));
+            (*ne)->lastName = data;
+            (*ne)->dtl = NULL;
+            (*ne)->pNext = NULL;
             *(data+w) = '\0';
             data+=(w+1);
-            w = 0;
-            if (!t_arg->entry_list_tail)
-                t_arg->entry_list_tail = e;
-            e->pNext = t_arg->entry_list_head;
-            t_arg->entry_list_head = e;
+            w = -1;
+            t_arg->entry_list_tail = *ne;
+            ne = &(*ne)->pNext;
         }
         w++;
     }

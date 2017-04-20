@@ -22,7 +22,7 @@
 #define OUTPUT_FILE "opt.txt"
 
 #ifndef THREAD_NUM
-#define THREAD_NUM 4
+#define THREAD_NUM 2
 #endif
 
 #endif
@@ -30,11 +30,11 @@
 #define DICT_FILE "./dictionary/words.txt"
 
 
-#define GET_TIME_REAL(moment) \
-    do{ \
-        clock_gettime(CLOCK_REALTIME, &moment);\
-    } while(0);
 
+static inline void get_real_clk(struct timespec *moment)
+{
+    clock_gettime(CLOCK_REALTIME, moment);
+}
 
 static double diff_in_second(struct timespec t1, struct timespec t2)
 {
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     pthread_t threads[THREAD_NUM];
     thread_arg thread_args[THREAD_NUM];
     /* Start timing */
-    GET_TIME_REAL(start);
+    get_real_clk(&start);
     int fd = open(DICT_FILE, O_RDONLY | O_NONBLOCK);
     off_t file_size = fsize(DICT_FILE);
     map = mmap(NULL, file_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
     size_t sizeForthread = file_size/THREAD_NUM;
     for (int i=0; i<THREAD_NUM; i++) {
         thread_args[i].data_start = data_end;
+        thread_args[i].id  = i+1;
         if (i!=(THREAD_NUM-1)) {
             data_end = map + (i+1)*sizeForthread;
             while (*data_end!='\n')
@@ -98,17 +99,14 @@ int main(int argc, char *argv[])
         pthread_join(threads[i], NULL);
 
     /* Connect the linked list of each thread */
-    for (int i = 0; i < THREAD_NUM; i++) {
-        if (i == 0) {
-            pHead = thread_args[i].entry_list_head;
-        } else {
-            e->pNext = thread_args[i].entry_list_head;
-        }
-
+    pHead = thread_args[0].entry_list_head;
+    e = thread_args[0].entry_list_tail;
+    for (int i = 1; i < THREAD_NUM; i++) {
+        e->pNext = thread_args[i].entry_list_head;
         e = thread_args[i].entry_list_tail;
     }
     /* Stop timing */
-    GET_TIME_REAL(end);
+    get_real_clk(&end);
 #else /* ! OPT */
     fp = fopen(DICT_FILE, "r");
     if (!fp) {

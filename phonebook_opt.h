@@ -27,11 +27,13 @@ typedef struct __PHONE_BOOK_ENTRY {
     struct __PHONE_BOOK_ENTRY *pNext;
     pdetail dtl;
 } entry;
+//} entry __attribute__ ((aligned (64)));
 
 entry *findName(char lastname[], entry *pHead);
 
 
 typedef struct _thread_arg {
+    int id;
     char *data_start;
     char *data_end;
     entry *entry_list_head;

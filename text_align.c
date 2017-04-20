@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include "text_align.h"
-
+#include "debug.h"
 #define MAX_BUFF_SIZE 100
 
 /**
@@ -26,7 +26,7 @@ int text_align(const char *originFileName,
         fclose(fd_origin);
         return -1;
     }
-
+    int count = 0;
     char rbuf[MAX_BUFF_SIZE];
     int suffix;
 
@@ -35,7 +35,7 @@ int text_align(const char *originFileName,
     /* Read each line from input file and pad to "padToLen" characters. */
     while (fgets(rbuf, sizeof(rbuf), fd_origin)) {
         memset(wbuf, '\0', padToLen);
-
+        count++;
         suffix = padToLen - strlen(rbuf);
         /*
          * The length of input text is longer than the length to padding to.
@@ -53,6 +53,7 @@ int text_align(const char *originFileName,
     fclose(fd_align);
     fclose(fd_origin);
     free(wbuf);
+    DEBUG_LOG("align words count %d\n", count);
 
     return 0;
 }
